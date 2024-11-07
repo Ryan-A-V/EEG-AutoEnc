@@ -86,7 +86,7 @@ class Autoencoder(Model):
         spectrogram = spectrogram[..., tf.newaxis]
 
         
-        fig, axs = plt.subplots(3,1)
+        fig, axs = plt.subplots(2,1)
         axs[0].imshow(display_Y, origin='lower', aspect='auto',
             extent=self.spectro.extent(self.out_shape[0]), cmap='inferno')
         axs[0].set_title(f"Reconstructed Audio Spectrogram (Latent Space = {self.latent_dim})")
@@ -95,9 +95,9 @@ class Autoencoder(Model):
             extent=self.spectro.extent(self.out_shape[0]), cmap='inferno')		
         axs[1].set_title("True Audio Spectrogram")
 
-        plot_spectrogram(spectrogram.numpy(), axs[2])
-        axs[2].set_title('Spectrogram')
-        plt.suptitle('test_spec')
+        # plot_spectrogram(spectrogram.numpy(), axs[2])
+        # axs[2].set_title('Spectrogram')
+        # plt.suptitle('test_spec')
         #plt.show()
        
         fig.legend()
