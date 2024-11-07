@@ -64,11 +64,13 @@ class Autoencoder(Model):
         _, loss = self.predict(self.X_test, [np.real(self.Y_test), np.imag(self.Y_test)])
 
         plt.plot(true_wave)
+        plt.yticks(range(-3, 3))
         plt.savefig(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_realwave.png")
         
         sf.write(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_og_audio.flac", true_wave, 250)
 
         plt.plot(modelYwave)
+        plt.yticks(range(-3, 3))
         plt.savefig(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_wave.png")
 
         sf.write(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_output.flac", modelYwave, 250)
@@ -102,23 +104,10 @@ class Autoencoder(Model):
         
         plt.savefig(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_Recon.png", dpi=300)
 
-        #print("display_Y: \n", display_Y)
-
-
-        """ # Convert the waveform to a spectrogram via a STFT.
-        spectrogram = tf.signal.stft(
-            true_Y, frame_length=255, frame_step=128)
-        # Obtain the magnitude of the STFT.
-        spectrogram = tf.abs(spectrogram)
-        # Add a `channels` dimension, so that the spectrogram can be used
-        # as image-like input data with convolution layers (which expect
-        # shape (`batch_size`, `height`, `width`, `channels`).
-        spectrogram = spectrogram[..., tf.newaxis]
-        #print('Spectrogram shape:', spectrogram.shape)"""
         
         self.test_loss =  np.average(loss)
-        print(loss)
-        print(self.test_loss)
+        # print(loss)
+        # print(self.test_loss)
 
 
     def process_data(self, eeg, audio, sample_rate, events, event_dict=None):
