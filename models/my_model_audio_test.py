@@ -28,10 +28,24 @@ class Autoencoder(Model):
         
 
     def call(self, x):
+        print(f"Input shape: {x.shape}")
+    
+        # Encoding the real part
         encoded_real = self.encoder_real(x)
+        print(f"Encoded real shape: {encoded_real.shape}")
+        
+        # Encoding the imaginary part
         encoded_imag = self.encoder_imag(x)
+        print(f"Encoded imaginary shape: {encoded_imag.shape}")
+        
+        # Decoding the real part
         decoded_real = self.decoder_real(encoded_real)
+        print(f"Decoded real shape: {decoded_real.shape}")
+        
+        # Decoding the imaginary part
         decoded_imag = self.decoder_imag(encoded_imag)
+        print(f"Decoded imaginary shape: {decoded_imag.shape}")
+        
         return [decoded_real, decoded_imag]
     
     def predict(self, data, labels):
@@ -65,26 +79,14 @@ class Autoencoder(Model):
 
         plt.figure()
         plt.plot(true_wave)
-        plt.yticks(range(-3, 3))
         plt.savefig(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_realwave.png")
         
-        sf.write(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_og_audio.flac", true_wave, 250)
+        sf.write(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_og_audio.flac", true_wave, 1600)
 
         plt.plot(modelYwave)
-        plt.yticks(range(-3, 3))
         plt.savefig(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_wave.png")
 
-        sf.write(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_output.flac", modelYwave, 250)
-
-        # Convert the waveform to a spectrogram via a STFT.
-        spectrogram = tf.signal.stft(
-        modelYwave, frame_length=250, frame_step=75)
-        # Obtain the magnitude of the STFT.
-        spectrogram = tf.abs(spectrogram)
-        # Add a `channels` dimension, so that the spectrogram can be used
-        # as image-like input data with convolution layers (which expect
-        # shape (`batch_size`, `height`, `width`, `channels`).
-        spectrogram = spectrogram[..., tf.newaxis]
+        sf.write(f"figs/{self.model_name}/Model_{self.model_name}_output.flac", modelYwave, 1600)
 
         
         fig, axs = plt.subplots(2,1)
@@ -95,16 +97,24 @@ class Autoencoder(Model):
         axs[1].imshow(true_Y, origin='lower', aspect='auto',
             extent=self.spectro.extent(self.out_shape[0]), cmap='inferno')		
         axs[1].set_title("True Audio Spectrogram")
-
-        # plot_spectrogram(spectrogram.numpy(), axs[2])
-        # axs[2].set_title('Spectrogram')
-        # plt.suptitle('test_spec')
-        #plt.show()
        
         fig.legend()
         
         plt.savefig(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_Recon.png", dpi=300)
 
+        #print("display_Y: \n", display_Y)
+
+
+        """ # Convert the waveform to a spectrogram via a STFT.
+        spectrogram = tf.signal.stft(
+            true_Y, frame_length=255, frame_step=128)
+        # Obtain the magnitude of the STFT.
+        spectrogram = tf.abs(spectrogram)
+        # Add a `channels` dimension, so that the spectrogram can be used
+        # as image-like input data with convolution layers (which expect
+        # shape (`batch_size`, `height`, `width`, `channels`).
+        spectrogram = spectrogram[..., tf.newaxis]
+        #print('Spectrogram shape:', spectrogram.shape)"""
         
         self.test_loss =  np.average(loss)
         # print(loss)
@@ -122,10 +132,18 @@ class Autoencoder(Model):
         
         audio = sig.resample(audio, eeg.shape[1], axis=1)
         
+        events = [18194, 21455, 24784, 27956, 31145, 33639, 37277, 40288, 44117, 46688, 49050, 51076, 53301, 56163, 59405, 63455, 66834, 79477, 83823, 87931,
+            91525, 95086, 99359, 102772, 106184, 109425, 111685, 114611, 118441, 122981, 126463, 132195, 144537, 148171, 152369, 156285, 160349,
+            162746, 165174, 167852, 169994, 173607, 176532, 180735, 182988, 185354, 188076, 191113, 202124, 205760, 207668, 211343, 214218, 217331, 219557,
+            223642, 226545, 229466, 233711, 237012, 240139, 251742, 254136, 257780, 260465, 263313, 266339, 269752, 273907, 276216, 279055, 281751, 284651,
+            289103, 300750, 303385, 305890, 308957, 311250, 313988, 316042, 319696, 323227, 326030, 328762, 331563, 335040, 337760, 343389, 355806, 358673,
+            362703, 365792, 368546, 371806, 375306, 378165, 382086, 383906, 386516, 390838, 394648, 398692, 401453, 407008, 417847, 
+            421406, 424928, 428115, 430842, 433495, 436684, 439429, 442036, 445459, 447736, 450474, 453479, 457217, 459527, 461458]
+
         # events = events[1:, 0]
         #split audio and eeg into event segments
-        split_eeg = helper.split_events(eeg, events[1:-1], sample_rate)
-        split_audio = helper.split_events(audio, events[1:-1], sample_rate)
+        split_eeg = helper.split_events(eeg, events[1:-1], sample_rate, (0.5, 0.5))
+        split_audio = helper.split_events(audio, events[1:-1], sample_rate, (0.5, 0.5))
 
         #split data into train, test, validation
         self.X_train, self.Y_train, self.X_test, self.Y_test, self.X_val, self.Y_val = \
@@ -138,9 +156,12 @@ class Autoencoder(Model):
         
         #SPECTROGRAM ACTUALLY GETS CALC'D HERE
         
-        window = sig.windows.gaussian(30, std=3, sym=True)
-        spectro = sig.ShortTimeFFT(win=window, hop=19, fs=sample_rate, scale_to='magnitude')
+        window = sig.windows.gaussian(85, std=2, sym=True)
+        spectro = sig.ShortTimeFFT(win=window, hop=85//10, fs=sample_rate, scale_to='magnitude', mfft=85*6)
+        # print('before spec', self.Y_train.shape)
+        # print('Anticipated dim', self.Y_train.shape[1]/4)
         self.Y_train = spectro.stft(self.Y_train)
+        # print("actual dim", self.Y_train.shape)
         
         self.Y_test = spectro.stft(self.Y_test)
         
@@ -154,6 +175,7 @@ class Autoencoder(Model):
         self.X_train = self.X_train.reshape(self.X_train.shape[0], self.X_train.shape[1], self.X_train.shape[2], 1)
         self.in_shape = self.X_train.shape[1:]
         self.out_shape = self.Y_train.shape[1:]
+        # print(self.out_shape, "this")
 
         self.Y_train_real = np.real(self.Y_train)
         self.Y_train_imag = np.imag(self.Y_train)
@@ -163,17 +185,15 @@ class Autoencoder(Model):
 
         self.encoder_real = tf.keras.Sequential([
             layers.Input(shape=self.in_shape),
-            layers.Conv2D(16, (3,3), strides=2, padding='same', activation='relu'),
+            layers.Conv2D(16, (3, 3), strides=2, padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Dropout(0.25),
-            layers.Conv2D(8, (3,3), strides=2, padding='same', activation='relu'),\
+            layers.Conv2D(8, (3, 3), strides=2, padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Dropout(0.25),
-            layers.Conv2D(4, (3,3), strides=2, padding='same', activation='relu'),
-            #layers.MaxPooling2D(),
+            layers.Conv2D(4, (3, 3), strides=2, padding='same', activation='relu'),
             layers.Dropout(0.25),
-            layers.Conv2D(2, (3,3), strides=2, padding='same', activation='relu'),
-            #layers.MaxPooling2D(),
+            layers.Conv2D(2, (3, 3), strides=2, padding='same', activation='relu'),
             layers.Dropout(0.25),
             layers.Flatten(),
             layers.Dense(self.latent_dim),
@@ -181,56 +201,39 @@ class Autoencoder(Model):
 
         self.encoder_imag = tf.keras.Sequential([
             layers.Input(shape=self.in_shape),
-            layers.Conv2D(16, (3,3), strides=2, padding='same', activation='relu'),
+            layers.Conv2D(16, (3, 3), strides=2, padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Dropout(0.25),
-            layers.Conv2D(8, (3,3), strides=2, padding='same', activation='relu'),\
+            layers.Conv2D(8, (3, 3), strides=2, padding='same', activation='relu'),
             layers.MaxPooling2D(),
             layers.Dropout(0.25),
-            layers.Conv2D(4, (3,3), strides=2, padding='same', activation='relu'),
-            #layers.MaxPooling2D(),
+            layers.Conv2D(4, (3, 3), strides=2, padding='same', activation='relu'),
             layers.Dropout(0.25),
-            layers.Conv2D(2, (3,3), strides=2, padding='same', activation='relu'),
-            #layers.MaxPooling2D(),
+            layers.Conv2D(2, (3, 3), strides=2, padding='same', activation='relu'),
             layers.Dropout(0.25),
             layers.Flatten(),
             layers.Dense(self.latent_dim),
         ])
 
         self.decoder_real = tf.keras.Sequential([
-            layers.Dense(2*3),
-            layers.Dropout(0.25),
-            layers.Reshape((3, 2, 1)),
-            layers.Conv2DTranspose(5, 3, strides=2, padding='same', activation='sigmoid'),
-            layers.Dropout(0.25),
-            #layers.Reshape((14, 3, 1)),
-            layers.Conv2DTranspose(7, 3, strides=2, padding='same', activation='sigmoid'),
-            layers.Dropout(0.25),
-            layers.Conv2DTranspose(11, 3, strides=2, padding='same', activation='sigmoid'),
-            #layers.Conv2D(7, (3,3), strides=2, padding='same', activation='sigmoid'),
-            layers.Dropout(0.25),
-            #layers.Reshape((self.out_shape[0], self.out_shape[1]*2)),
-            #layers.MaxPooling1D(),
-            #layers.Dense(self.out_shape[1]),
-            layers.Reshape(self.out_shape)
+            layers.Dense(100),
+            layers.Reshape((100, 1)),
+            layers.LSTM(1000),
+            layers.Flatten(),
+            layers.Dense(self.out_shape[0]*self.out_shape[1]),
+            layers.Reshape(self.out_shape)  # Final shape for spectrogram
         ])
 
         self.decoder_imag = tf.keras.Sequential([
-            layers.Dense(2*3),
-            layers.Dropout(0.25),
-            layers.Reshape((3, 2, 1)),
-            layers.Conv2DTranspose(5, 3, strides=2, padding='same', activation='sigmoid'),
-            layers.Dropout(0.25),
-            #layers.Reshape((14, 3, 1)),
-            layers.Conv2DTranspose(7, 3, strides=2, padding='same', activation='sigmoid'),
-            layers.Dropout(0.25),
-            layers.Conv2DTranspose(11, 3, strides=2, padding='same', activation='sigmoid'),
-            #layers.Conv2D(7, (3,3), strides=2, padding='same', activation='sigmoid'),
-            layers.Dropout(0.25),
-            #layers.Reshape((self.out_shape[0], self.out_shape[1]*2)),
-            #layers.MaxPooling1D(),
-            #layers.Dense(self.out_shape[1]),
-            layers.Reshape(self.out_shape)
+            # layers.LSTM(4),
+            # layers.LSTM(16),
+            # layers.LSTM(32),
+            layers.Dense(100),
+            layers.Reshape((100, 1)),
+            layers.LSTM(1000),
+            layers.Flatten(),
+            layers.Dense(self.out_shape[0]*self.out_shape[1]),
+            layers.Reshape(self.out_shape)  # Final shape for spectrogram
         ])
 
         self.compile(optimizer="Adam", loss=losses.MeanSquaredError())
@@ -242,17 +245,3 @@ class Autoencoder(Model):
                 )
 
 #python testing_script.py my_model_spec_test 100
-
-def plot_spectrogram(spectrogram, ax):
-  if len(spectrogram.shape) > 2:
-    assert len(spectrogram.shape) == 3
-    spectrogram = np.squeeze(spectrogram, axis=-1)
-  # Convert the frequencies to log scale and transpose, so that the time is
-  # represented on the x-axis (columns).
-  # Add an epsilon to avoid taking a log of zero.
-  log_spec = np.log(spectrogram.T + np.finfo(float).eps)
-  height = log_spec.shape[0]
-  width = log_spec.shape[1]
-  X = np.linspace(0, np.size(spectrogram), num=width, dtype=int)
-  Y = range(height)
-  ax.pcolormesh(X, Y, log_spec)
