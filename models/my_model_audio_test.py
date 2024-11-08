@@ -81,12 +81,12 @@ class Autoencoder(Model):
         plt.plot(true_wave)
         plt.savefig(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_realwave.png")
         
-        sf.write(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_og_audio.flac", true_wave, 1600)
+        sf.write(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_og_audio.flac", true_wave, 250)
 
         plt.plot(modelYwave)
         plt.savefig(f"figs/{self.model_name}/Model_{self.model_name}_{self.latent_dim}_wave.png")
 
-        sf.write(f"figs/{self.model_name}/Model_{self.model_name}_output.flac", modelYwave, 1600)
+        sf.write(f"figs/{self.model_name}/Model_{self.model_name}_output.flac", modelYwave, 250)
 
         
         fig, axs = plt.subplots(2,1)

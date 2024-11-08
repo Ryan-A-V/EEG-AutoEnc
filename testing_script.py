@@ -25,7 +25,7 @@ RANDOM_STATE = 5
 TRAIN_SIZE = 0.7
 TEST_SIZE = 0.3
 SPEC=100
-LATENT_SPACES = [5, 10, 15, 20, 25, 30]
+LATENT_SPACES = [30] #[5, 10, 15, 20, 25, 30]
 EPOCHS = 100
 
 if __name__ == "__main__":
